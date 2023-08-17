@@ -213,16 +213,18 @@ get_uc <- function(filename){
   return(c(file.info[2:5], unique.clones, unique.allo))
 }
 
-# df_uc <- data.frame(t(sapply(files.tcr, function(filename) get_uc(filename))))
-# df_uc$V5 <- as.numeric(df_uc$V5)
-# df_uc[df_uc$stage == "BL1",]$stage <- "PreTX"
-# df_uc[df_uc$stage == "low1",]$stage <- "donor-reactive"
-# df_uc[df_uc$stage == "late1",]$stage <- "PostTX"
-# 
-# df_uc$tmp <- paste0(df_uc$CDtype," " ,df_uc$stage)
-# df_uc$tmp <- factor(df_uc$tmp,levels = c("CD4 unstim", "CD8 unstim", "CD4 donor-reactive", "CD8 donor-reactive", "CD4 BX", "CD8 BX"))
-# df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
-# write.xlsx(df_uc, paste0(out.path, "table_tcopies_unique_clones.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_unique_clones.xlsx")){
+ df_uc <- data.frame(t(sapply(files.tcr, function(filename) get_uc(filename))))
+ df_uc$V5 <- as.numeric(df_uc$V5)
+ df_uc[df_uc$stage == "BL1",]$stage <- "PreTX"
+ df_uc[df_uc$stage == "low1",]$stage <- "donor-reactive"
+ df_uc[df_uc$stage == "late1",]$stage <- "PostTX"
+ 
+ df_uc$tmp <- paste0(df_uc$CDtype," " ,df_uc$stage)
+ df_uc$tmp <- factor(df_uc$tmp,levels = c("CD4 unstim", "CD8 unstim", "CD4 donor-reactive", "CD8 donor-reactive", "CD4 BX", "CD8 BX"))
+ df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
+ write.xlsx(df_uc, paste0(out.path, "table_tcopies_unique_clones.xlsx"), overwrite=T)
+}
 
 df_uc <- read.xlsx(paste0(out.path, "table_tcopies_unique_clones.xlsx"))
 df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
@@ -654,25 +656,30 @@ get_VJpairs <- function(x, classes=2){
 }
 
 # Jensen-Shannon Divergence for VJ pairs
-# rel.files <- rbind(cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "late")]),
-#                    cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "low")]),
-#                    cbind(files.tcr[str_detect(files.tcr, "low")], files.tcr[str_detect(files.tcr, "late")]))
-# JSD.val.vj <- apply(rel.files, 1, function(x) get_VJpairs(x))
-# JSD.VJ <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val.vj)))
-# colnames(JSD.VJ)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
-# JSD.VJ$rejection <- ifelse(JSD.VJ$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
-# JSD.VJ[, 11:14]<- apply(JSD.VJ[, 11:14], 2, as.numeric)
-# write.xlsx(JSD.VJ, paste0(out.path, "table_tcopies_JSD_VJ.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_JSD_VJ.xlsx")){
+ rel.files <- rbind(cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "late")]),
+                    cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "low")]),
+                    cbind(files.tcr[str_detect(files.tcr, "low")], files.tcr[str_detect(files.tcr, "late")]))
+ JSD.val.vj <- apply(rel.files, 1, function(x) get_VJpairs(x))
+ JSD.VJ <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val.vj)))
+ colnames(JSD.VJ)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
+ JSD.VJ$rejection <- ifelse(JSD.VJ$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
+ JSD.VJ[, 11:14]<- apply(JSD.VJ[, 11:14], 2, as.numeric)
+ write.xlsx(JSD.VJ, paste0(out.path, "table_tcopies_JSD_VJ.xlsx"), overwrite=T)
+}
+
 JSD.VJ <- read.xlsx(paste0(out.path, "table_tcopies_JSD_VJ.xlsx"))
 
 
 # # Jensen-Shannon Divergence for clonal distribution
-# JSD.val <- apply(rel.files, 1, wrapper_JSD)
-# JSD.df <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val)))
-# colnames(JSD.df)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
-# JSD.df$rejection <- ifelse(JSD.df$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
-# JSD.df[, 11:14]<- apply(JSD.df[, 11:14], 2, as.numeric)
-# write.xlsx(JSD.df, paste0(out.path, "table_tcopies_JSD.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_JSD.xlsx")){
+ JSD.val <- apply(rel.files, 1, wrapper_JSD)
+ JSD.df <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val)))
+ colnames(JSD.df)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
+ JSD.df$rejection <- ifelse(JSD.df$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
+ JSD.df[, 11:14]<- apply(JSD.df[, 11:14], 2, as.numeric)
+ write.xlsx(JSD.df, paste0(out.path, "table_tcopies_JSD.xlsx"), overwrite=T)
+}
 
 JSD.df <- read.xlsx(paste0(out.path, "table_tcopies_JSD.xlsx"))
 
@@ -1025,23 +1032,24 @@ df.dwns <- data.frame(cbind(unique(tcopies.reads[,c("CDtype","stage")]), smalles
    autofit() %>%
    fit_to_width(6.5)
 
-# --------
-# rel.files <- files.tcr[str_detect(files.tcr,"low", negate = T)]
-# plan(multisession, workers=5)
-# res.dwns <- data.frame(t(future_sapply(rel.files, function(x) wrapper_downsampling(x, path=data.path, df.dwns, rep.dwns = rep.dwns, incl.stages = c("BL1","late1")))))
-# plan(sequential)
-# colnames(res.dwns) <- c("patID","CDtype","stage","rejection",
-#                         "org.abs.allo",  "org.abs.allo.clones", "org.rel.allo", "org.rel.allo.clones", "org.cum.allo",
-#                        "abs.allo", "abs.allo.lo", "abs.allo.up",
-#                        "abs.allo.clones", "abs.allo.clones.lo", "abs.allo.clones.up",
-#                        "rel.allo", "rel.allo.lo", "rel.allo.up",
-#                        "rel.allo.clones", "rel.allo.clones.lo", "rel.allo.clones.up",
-#                        "cum.allo","cum.allo.lo", "cum.allo.up")
-# 
-# res.dwns[,5:24] <- apply(res.dwns[,5:24],2, as.numeric)
-# res.dwns[res.dwns$rejection==0,]$rejection <- "Controls"
-# res.dwns[res.dwns$rejection==1,]$rejection <- "Rejectors"
-# write.xlsx(res.dwns, paste0(out.path, "table_tcopies_allo_dwns.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_allo_dwns.xlsx")){
+ rel.files <- files.tcr[str_detect(files.tcr,"low", negate = T)]
+ plan(multisession, workers=5)
+ res.dwns <- data.frame(t(future_sapply(rel.files, function(x) wrapper_downsampling(x, path=data.path, df.dwns, rep.dwns = rep.dwns, incl.stages = c("BL1","late1")))))
+ plan(sequential)
+ colnames(res.dwns) <- c("patID","CDtype","stage","rejection",
+                         "org.abs.allo",  "org.abs.allo.clones", "org.rel.allo", "org.rel.allo.clones", "org.cum.allo",
+                        "abs.allo", "abs.allo.lo", "abs.allo.up",
+                        "abs.allo.clones", "abs.allo.clones.lo", "abs.allo.clones.up",
+                        "rel.allo", "rel.allo.lo", "rel.allo.up",
+                        "rel.allo.clones", "rel.allo.clones.lo", "rel.allo.clones.up",
+                        "cum.allo","cum.allo.lo", "cum.allo.up")
+ 
+ res.dwns[,5:24] <- apply(res.dwns[,5:24],2, as.numeric)
+ res.dwns[res.dwns$rejection==0,]$rejection <- "Controls"
+ res.dwns[res.dwns$rejection==1,]$rejection <- "Rejectors"
+ write.xlsx(res.dwns, paste0(out.path, "table_tcopies_allo_dwns.xlsx"), overwrite=T)
+}
 
 res.dwns <- read.xlsx(paste0(out.path, "table_tcopies_allo_dwns.xlsx"))
 
@@ -1400,12 +1408,14 @@ calc_RepertoireStatistics <- function(filename=NULL, data=NULL, path=data.path){
 
 
 #Generate table of repertoire characteristics for all rep samples
-# tcopies.stats <- data.frame(t(sapply(files.tcr, calc_RepertoireStatistics, USE.NAMES = F)))
-# varsToNumeric <- colnames(tcopies.stats)[5:ncol(tcopies.stats)]
-# tcopies.stats[,varsToNumeric] <- lapply(tcopies.stats[,varsToNumeric], function(x) as.numeric(as.character(x)))
-# tcopies.stats[tcopies.stats$rejection==0,]$rejection <- "Controls"
-# tcopies.stats[tcopies.stats$rejection==1,]$rejection <- "Rejectors"
-# write.xlsx(tcopies.stats, paste0(out.path, "table_tcopies_diversity.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_diversity.xlsx")){
+  tcopies.stats <- data.frame(t(sapply(files.tcr, calc_RepertoireStatistics, USE.NAMES = F)))
+  varsToNumeric <- colnames(tcopies.stats)[5:ncol(tcopies.stats)]
+  tcopies.stats[,varsToNumeric] <- lapply(tcopies.stats[,varsToNumeric], function(x) as.numeric(as.character(x)))
+  tcopies.stats[tcopies.stats$rejection==0,]$rejection <- "Controls"
+  tcopies.stats[tcopies.stats$rejection==1,]$rejection <- "Rejectors"
+  write.xlsx(tcopies.stats, paste0(out.path, "table_tcopies_diversity.xlsx"), overwrite=T)
+}
 
 tcopies.stats <- read.xlsx(paste0(out.path, "table_tcopies_diversity.xlsx"))
 
