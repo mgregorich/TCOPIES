@@ -13,7 +13,6 @@ library(tidyr)            #Packages for data cleaning and shaping
 library(vegan)            #Contains similarity functions
 library(ggplot2)          #Plotting package
 library(RColorBrewer)    #Heatmap packages
-library(tcR)              # Advanced Data Analysis of Immune Receptor Repertoires
 library(stringdist)       # Calculate Levenshtein distance
 library(tidyverse)
 library(igraph)
