@@ -32,6 +32,8 @@ library(openxlsx)
 
 pacman::p_load(openxlsx)
 
+CONVENTIONAL_ONLY <- T
+
 # Data cleaning parameter
 ambiguity.ratio=2
 fold.change=NULL
@@ -67,6 +69,8 @@ if(!dir.exists("../Daten/All_rerun_corr/clean_tcopies_fold5_freq1e-10_ar2")){ #e
 
 source("01_data_cleaning.R")
 
-#source("02_network_analysis.R")
+if(!CONVENTIONAL_ONLY){
+  source("02_network_analysis.R")
+}
 
-rmarkdown::render("report_TCOPIES_publ.Rmd", envir = new.env())
+rmarkdown::render("report_TCOPIES_publ.Rmd", envir = new.env(), params = list(conventional_only = CONVENTIONAL_ONLY))

@@ -4,11 +4,17 @@ date: January 15, 2021
 output: 
   bookdown::word_document2:
   fig_caption: yes
+params:
+  conventional_only: FALSE
 ---
 
 
+```{r message=FALSE, warning=FALSE, include=F}
+CONVENTIONAL_ONLY <- params$conventional_only
+```
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-rm(list=ls())
+rm(list=grep("^CONVENTIONAL_ONLY$", ls(), invert = T, value = T))
 
 pacman::p_load(openxlsx,tidyverse,knitr,flextable,officer,reshape2,summarytools,tableone,stringr,
                ggplot2,ggrepel,stringdist,igraph,gridExtra,VennDiagram,vegan,SPECIES,grid,dplyr,ineq,future.apply,
@@ -32,7 +38,6 @@ set.seed(1234)
 rep.dwns=1000
 tcopies.TCMGRset <- c("R42","R43","R106","R132","R172","R34")
 wein.TCMGRset <- c("P03","P06","P07","P08","P15","P16", "P18", "P20", "P21", "P22", "P23", "P39", "P43", "P44")
-
 
 # Paths to folders with results
 folder_CD4_allo <- "../Output/network_tcopies_CD4_allo_LV1_final/"
@@ -2559,6 +2564,12 @@ top20ranking <- list("R34-periph"=get_ranking(df.34.late, tissue_34, pat="R34", 
 
 write.xlsx(top20ranking, file=paste0(out.path,"table_tcopies_top20ranking_periph_tissue.xlsx"), overwrite=T)
 
+```
+
+```{r echo=FALSE, cache=T,  message=FALSE, warning=FALSE}
+if(CONVENTIONAL_ONLY){
+  knitr::knit_exit()
+}
 ```
 
 
