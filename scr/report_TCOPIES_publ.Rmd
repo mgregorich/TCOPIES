@@ -1994,6 +1994,7 @@ df.43.CD8 <- rbind(df.43.CD8.BL,df.43.CD8.low,df.43.CD8.late[,!(colnames(df.43.C
 # 
 # write.xlsx(res.all, paste0(out.path, "table_tcopies_dwns_PrePostTissue_readjust.xlsx"), overwrite=T)
 
+if(F){ #deactivate for now depends on file >>table_tcopies_dwns_PrePostTissue_readjust.xlsx<< which currently can not be generated as variable res.tmp.tissue is missing
 res.all <- read.xlsx(paste0(out.path, "table_tcopies_dwns_PrePostTissue_readjust.xlsx"))
 res.all[res.all$rejection==0,]$rejection <- "Controls"
 res.all[res.all$rejection==1,]$rejection <- "Rejectors"
@@ -2029,7 +2030,7 @@ p <- ggplot(data=tmp, aes(y=rel.allo, x=patID, fill=stage))+
 filename <- paste0("plot_allofrac_blood+tissue_barchart_2x2_tcopies")
 p
 ggsave(filename = paste(out.path,filename,".png", sep = ""), plot=p, width = 20, height = 20, dpi = 640, units="cm", limitsize = F)
-
+}
 ```
 
 
