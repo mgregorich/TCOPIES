@@ -23,6 +23,15 @@ pacman::p_load(openxlsx,tidyverse,knitr,flextable,officer,reshape2,summarytools,
 
 source("helper_functions.R")
 
+newBKM <- function(){
+  if(!exists("BKM_CNT")){
+    BKM_CNT <<- 0
+  }
+  
+  BKM_CNT <<- BKM_CNT + 1
+  return(paste0("tab", BKM_CNT))
+}
+
 
 # get data
 tissue.path <- "../Daten/Tissue/"
@@ -41,10 +50,6 @@ wein.TCMGRset <- c("P03","P06","P07","P08","P15","P16", "P18", "P20", "P21", "P2
 
 # Paths to folders with results
 folder_CD4_allo <- "../Output/network_tcopies_CD4_allo_LV1_final/"
-
-
-# Enumeration for tables
-tbl_autonum <- run_autonum(seq_id = "tab", bkm = "tcopies")
 
 # Read in tissue data
 filename <- "vdj.R34_bulk_tissue_1_clones_allo.txt"
@@ -87,7 +92,7 @@ df <- data.frame(Parameter=c("Ambiguity.Ratio", "Fold.change","Frequency","Downs
  df%>% 
   flextable()  %>%
   autofit() %>%
-  set_caption("Parameters for data cleaning and downsampling", autonum = tbl_autonum) %>% 
+  set_caption("Parameters for data cleaning and downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) %>% 
   # bold header
   bold(part = "header") 
 
@@ -278,7 +283,7 @@ anova.tcopies %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Analysis of variance (ANOVA) for multiple group comparsion of unqiue clone counts grouped by phenotype", autonum = tbl_autonum)
+  set_caption("Analysis of variance (ANOVA) for multiple group comparsion of unqiue clone counts grouped by phenotype", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 ttest.uc1 <- t.test(df_uc[df_uc$CDtype %in% "CD4" & df_uc$stage %in% "PreTX",]$V5, df_uc[df_uc$CDtype %in% "CD4" &df_uc$stage %in% "PostTX",]$V5, paired=T)
 ttest.uc2 <- t.test(df_uc[df_uc$CDtype %in% "CD4" & df_uc$stage %in% "PreTX",]$V5, df_uc[df_uc$CDtype %in% "CD4" &df_uc$stage %in% "donor-reactive",]$V5, paired=T)
@@ -307,7 +312,7 @@ ttest.uc %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in unique clonotypes in the pre-and donor-reactive repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in unique clonotypes in the pre-and donor-reactive repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 ```
 
@@ -564,7 +569,7 @@ ttest.slope %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in the power law slopes in the pre-and donor-reactive repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in the power law slopes in the pre-and donor-reactive repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
   
 ```
 
@@ -693,7 +698,7 @@ JSD.df <- read.xlsx(paste0(out.path, "table_tcopies_JSD.xlsx"))
 #   autofit %>%
 #   colformat_num(digits=2) %>%
 #   bold(part = "header") %>%
-#   set_caption("JSD)", autonum = tbl_autonum)
+#   set_caption("JSD)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 JSD.CD4 <- JSD.df[JSD.df$CDtype %in% "CD4" & JSD.df$stage %in% "BL1" & JSD.df$stage.1 %in% "late1",]
@@ -779,7 +784,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and PostTX in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and PostTX in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -836,7 +841,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and allo in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and allo in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -893,7 +898,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PostTX and allo in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PostTX and allo in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
@@ -1033,7 +1038,7 @@ df.dwns <- data.frame(cbind(unique(tcopies.reads[,c("CDtype","stage")]), smalles
  df.dwns %>%
    flextable()  %>%
      bold(part = "header") %>%
-   set_caption("Smallest read size for each phenotype group and time point", autonum = tbl_autonum) %>%
+   set_caption("Smallest read size for each phenotype group and time point", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) %>%
    autofit() %>%
    fit_to_width(6.5)
 
@@ -1224,7 +1229,7 @@ res.data.clts %>%
                      colwidths = c(2,7,7)) %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of alloclonotype fraction and absolute alloclonotype counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = tbl_autonum)
+  set_caption("Overview of alloclonotype fraction and absolute alloclonotype counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 res.ttpaired.clts <- data.frame("Phenotype"=c(rep("CD4",2),rep("CD8",2)), 
@@ -1243,7 +1248,7 @@ res.ttpaired.clts %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in absolute alloconotype counts and alloclonotype fraction in the pre-and post-transplant repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in absolute alloconotype counts and alloclonotype fraction in the pre-and post-transplant repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 
 
@@ -1262,7 +1267,7 @@ res.data.cs %>%
                      colwidths = c(2,7,7)) %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of alloclonal fraction and absolute alloclone counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = tbl_autonum)
+  set_caption("Overview of alloclonal fraction and absolute alloclone counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 res.ttpaired.cs <- data.frame("Phenotype"=c(rep("CD4",2),rep("CD8",2)), 
@@ -1281,7 +1286,7 @@ res.ttpaired.cs %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in absolute allocone counts and alloclonal fraction in the pre-and post-transplant repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in absolute allocone counts and alloclonal fraction in the pre-and post-transplant repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 ```
 
@@ -1310,7 +1315,7 @@ res.tmp %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the unpaired Student's t test assessing differences in alloclonotype fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = tbl_autonum) 
+  set_caption("Results of the unpaired Student's t test assessing differences in alloclonotype fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 
 # Hypothesis testing of alloclonal fraction between the two outcome groups in PostTX
@@ -1335,7 +1340,7 @@ res.tmp %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the unpaired Student's t test assessing differences in alloclone fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = tbl_autonum)
+  set_caption("Results of the unpaired Student's t test assessing differences in alloclone fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -1628,7 +1633,7 @@ res %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = tbl_autonum)
+  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 #- Range of diversity estimates
 
@@ -1644,7 +1649,7 @@ div.df %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Distribution of the diversity estimates across the immune repertoires", autonum = tbl_autonum)
+  set_caption("Distribution of the diversity estimates across the immune repertoires", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 ```
@@ -1706,7 +1711,7 @@ res %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = tbl_autonum)
+  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 
 ```
@@ -2061,7 +2066,7 @@ cdratio.tissue %>%
   flextable() %>%
   autofit %>%
   bold(part = "header") %>%
-  set_caption("CD4:CD8 ratio of clones in the allograft", autonum = tbl_autonum)
+  set_caption("CD4:CD8 ratio of clones in the allograft", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 cdratio.tissue.counts <- data.frame(cbind(c("R34", "R43"),rbind(c(sum(tissue_34$count), sum(tissue_34[tissue_34$pheno %in% "CD4",]$count), sum(tissue_34[tissue_34$pheno %in% "CD8",]$count), sum(tissue_34[tissue_34$pheno %in% "Unknown",]$count)), c(sum(tissue_43$count), sum(tissue_43[tissue_43$pheno %in% "CD4",]$count), sum(tissue_43[tissue_43$pheno %in% "CD8",]$count), sum(tissue_43[tissue_43$pheno %in% "Unknown",]$count)))))
 colnames(cdratio.tissue.counts) <- c("Patient","Total", "CD4", "CD8", "Unknown")
@@ -2078,7 +2083,7 @@ cdratio.tissue.counts %>%
   flextable() %>%
   autofit %>%
   bold(part = "header") %>%
-  set_caption("CD4:CD8 ratio of clone counts in the allograft", autonum = tbl_autonum)
+  set_caption("CD4:CD8 ratio of clone counts in the allograft", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 ## Diversity estimates
 
@@ -2143,7 +2148,7 @@ df.tissue %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of the allograft immune repertoire of patient R34 and R43 at time of biopsy", autonum = tbl_autonum)
+  set_caption("Overview of the allograft immune repertoire of patient R34 and R43 at time of biopsy", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 # Overlap Table
 res_tissue_43 <- t(sapply(stages, function(x) calc_CloneOverlap(file="R43", blood=blood_43, tissue = tissue_43, stage = x)))
@@ -2154,7 +2159,7 @@ res_tissue %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of the immune repertoire samples of patient R34 and R43 (pre-transplant, alloreative, post-transplant and allograft)", autonum = tbl_autonum)
+  set_caption("Overview of the immune repertoire samples of patient R34 and R43 (pre-transplant, alloreative, post-transplant and allograft)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 # Diversity estimates of the tissue samples
@@ -2172,7 +2177,7 @@ div.tissue %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Diversity estimates of the tissue samples R34 and R43", autonum = tbl_autonum)
+  set_caption("Diversity estimates of the tissue samples R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 ```
@@ -2347,7 +2352,7 @@ tbl.tmp %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Comparison in V usage and VJ usage between the readjusted PostTX and allograft repertoires of patient R34 and R43", autonum = tbl_autonum)
+  set_caption("Comparison in V usage and VJ usage between the readjusted PostTX and allograft repertoires of patient R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 
 ```
@@ -2383,7 +2388,7 @@ JSD.tissue %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD)", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 write.xlsx(JSD.tissue, paste0(out.path, "table_tcopies_JSD_tissue.xlsx"), overwrite=T)
   
@@ -2397,7 +2402,7 @@ JSD.tissue.hf %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD) considering only the high frequency component of the pre-transplant (PreTX) and post-transplant (PostTX) samples", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD) considering only the high frequency component of the pre-transplant (PreTX) and post-transplant (PostTX) samples", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
@@ -2488,7 +2493,7 @@ JSD.overlap %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD) of the overlap between the periphery and the allorgraft sample for patient R34 and R43", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD) of the overlap between the periphery and the allorgraft sample for patient R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
