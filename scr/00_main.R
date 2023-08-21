@@ -67,7 +67,7 @@ if(!dir.exists("../Daten/All_rerun_corr/clean_tcopies_fold5_freq1e-10_ar2")){ #e
 
 # ------- Execute code
 
-source("01_data_cleaning.R")
+source("01_data_cleaning.R", local = new.env())
 
 if(!CONVENTIONAL_ONLY){
   source("02_network_analysis.R")
