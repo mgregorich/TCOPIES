@@ -47,7 +47,8 @@ install.packages(c(
   "MASS",
   "questionr",
   "pander",
-  "officedown"
+  "officedown",
+  "bookdown"
   )
 )
 
