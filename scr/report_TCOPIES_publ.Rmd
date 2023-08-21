@@ -2136,7 +2136,7 @@ get_stats <- function(df, blood){
 
 
 # Overlap Table
-res_tissue_34 <- t(sapply(stages, function(x) calc_CloneOverlap(file="R34", blood=blood_34, tissue = tissue_34, stage = x)))
+res_tissue_34 <- bind_rows(lapply(stages, function(x) calc_CloneOverlap(file="R34", blood=blood_34, tissue = tissue_34, stage = x)))
 blood_43 <- merged[["R43"]]
 
 
@@ -2151,7 +2151,7 @@ df.tissue %>%
   set_caption("Overview of the allograft immune repertoire of patient R34 and R43 at time of biopsy", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 # Overlap Table
-res_tissue_43 <- t(sapply(stages, function(x) calc_CloneOverlap(file="R43", blood=blood_43, tissue = tissue_43, stage = x)))
+res_tissue_43 <- bind_rows(lapply(stages, function(x) calc_CloneOverlap(file="R43", blood=blood_43, tissue = tissue_43, stage = x)))
 res_tissue <- data.frame(rbind(res_tissue_34, res_tissue_43))
 res_tissue %>% 
   `colnames<-`(c("Patient", "Sample", "Clones - blood", "Clones - tissue", "New Clones - tissue", "New Clones - tissue (%)", 
