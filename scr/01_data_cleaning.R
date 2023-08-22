@@ -30,7 +30,6 @@ frequency=0.0000000001
 
 
 # ------ FUNCTIONS ----------------------------
-
 retainCloneTableColumns <- function(ct, col.retain){
   # Retain only the columns freq and count
   return(
@@ -217,8 +216,15 @@ reactiveClones <- function(data, fold=5, freq=1e-5) {
 # merged <- mergeIndivCloneTables(ct)
 # save(merged, file = paste0("TCopies_merged.RData"))
 
-
-load(file = paste0("TCopies_merged.RData"))
+if(file.exists("TCopies_merged.RData")){
+  load(file = paste0("TCopies_merged.RData"))
+}else{
+  ct <- readCloneTables(path)
+  ct <- fixSampleNames(ct)
+  merged <- mergeIndivCloneTables(ct)
+  save(merged, file = paste0("TCopies_merged.RData"))
+  rm(ct)
+}
 
 #--------------------------------------
 
@@ -320,7 +326,7 @@ clean.path <- paste0(new.path, "clean_tcopies_fold", fold.change,"_freq",frequen
 
 # Execute clean up
 inf.groups <-sapply(pats, function(x) clean_group(x, fc=fold.change, freq=frequency, ar=ambiguity.ratio, cpath=clean.path))
-write.xlsx(round(inf.groups,3), file=paste0(clean.path,"info_cleanup.xlsx"),row.names = T, col.names = T)
+write.xlsx(as.data.frame(round(inf.groups,3)), file=paste0(clean.path,"info_cleanup.xlsx"), row.names = T, col.names = T)
 
 
 
@@ -350,12 +356,15 @@ write.xlsx(round(inf.groups,3), file=paste0(clean.path,"info_cleanup.xlsx"),row.
 
 # Corrected merged dataset
 # Read in data, and fix names and create aggregated clone tables
-# ct <- readCloneTables(cor.path)
-# ct <- fixSampleNames(ct)
-# merged <- mergeIndivCloneTables(ct)
-# save(merged, file = paste0("TCopies_merged_corr1.RData"))
+if(!file.exists("TCopies_merged_corr1.RData")){
+  ct <- readCloneTables(cor.path)
+  ct <- fixSampleNames(ct)
+  merged <- mergeIndivCloneTables(ct)
+  save(merged, file = paste0("TCopies_merged_corr1.RData"))
+}else{
+  load(file = paste0("TCopies_merged_corr1.RData"))
+}
 
-load(file = paste0("TCopies_merged_corr1.RData"))
 
 
 # Clean up remaining CD4/CD8 mix ups

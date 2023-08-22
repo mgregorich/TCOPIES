@@ -4,11 +4,17 @@ date: January 15, 2021
 output: 
   bookdown::word_document2:
   fig_caption: yes
+params:
+  conventional_only: FALSE
 ---
 
 
+```{r message=FALSE, warning=FALSE, include=F}
+CONVENTIONAL_ONLY <- params$conventional_only
+```
+
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-rm(list=ls())
+rm(list=grep("^CONVENTIONAL_ONLY$", ls(), invert = T, value = T))
 
 pacman::p_load(openxlsx,tidyverse,knitr,flextable,officer,reshape2,summarytools,tableone,stringr,
                ggplot2,ggrepel,stringdist,igraph,gridExtra,VennDiagram,vegan,SPECIES,grid,dplyr,ineq,future.apply,
@@ -16,6 +22,15 @@ pacman::p_load(openxlsx,tidyverse,knitr,flextable,officer,reshape2,summarytools,
 #pander( data, style='rmarkdown' ) 
 
 source("helper_functions.R")
+
+newBKM <- function(){
+  if(!exists("BKM_CNT")){
+    BKM_CNT <<- 0
+  }
+  
+  BKM_CNT <<- BKM_CNT + 1
+  return(paste0("tab", BKM_CNT))
+}
 
 
 # get data
@@ -33,13 +48,8 @@ rep.dwns=1000
 tcopies.TCMGRset <- c("R42","R43","R106","R132","R172","R34")
 wein.TCMGRset <- c("P03","P06","P07","P08","P15","P16", "P18", "P20", "P21", "P22", "P23", "P39", "P43", "P44")
 
-
 # Paths to folders with results
 folder_CD4_allo <- "../Output/network_tcopies_CD4_allo_LV1_final/"
-
-
-# Enumeration for tables
-tbl_autonum <- run_autonum(seq_id = "tab", bkm = "tcopies")
 
 # Read in tissue data
 filename <- "vdj.R34_bulk_tissue_1_clones_allo.txt"
@@ -82,7 +92,7 @@ df <- data.frame(Parameter=c("Ambiguity.Ratio", "Fold.change","Frequency","Downs
  df%>% 
   flextable()  %>%
   autofit() %>%
-  set_caption("Parameters for data cleaning and downsampling", autonum = tbl_autonum) %>% 
+  set_caption("Parameters for data cleaning and downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) %>% 
   # bold header
   bold(part = "header") 
 
@@ -213,16 +223,18 @@ get_uc <- function(filename){
   return(c(file.info[2:5], unique.clones, unique.allo))
 }
 
-# df_uc <- data.frame(t(sapply(files.tcr, function(filename) get_uc(filename))))
-# df_uc$V5 <- as.numeric(df_uc$V5)
-# df_uc[df_uc$stage == "BL1",]$stage <- "PreTX"
-# df_uc[df_uc$stage == "low1",]$stage <- "donor-reactive"
-# df_uc[df_uc$stage == "late1",]$stage <- "PostTX"
-# 
-# df_uc$tmp <- paste0(df_uc$CDtype," " ,df_uc$stage)
-# df_uc$tmp <- factor(df_uc$tmp,levels = c("CD4 unstim", "CD8 unstim", "CD4 donor-reactive", "CD8 donor-reactive", "CD4 BX", "CD8 BX"))
-# df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
-# write.xlsx(df_uc, paste0(out.path, "table_tcopies_unique_clones.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_unique_clones.xlsx")){
+ df_uc <- data.frame(t(sapply(files.tcr, function(filename) get_uc(filename))))
+ df_uc$V5 <- as.numeric(df_uc$V5)
+ df_uc[df_uc$stage == "BL1",]$stage <- "PreTX"
+ df_uc[df_uc$stage == "low1",]$stage <- "donor-reactive"
+ df_uc[df_uc$stage == "late1",]$stage <- "PostTX"
+ 
+ df_uc$tmp <- paste0(df_uc$CDtype," " ,df_uc$stage)
+ df_uc$tmp <- factor(df_uc$tmp,levels = c("CD4 unstim", "CD8 unstim", "CD4 donor-reactive", "CD8 donor-reactive", "CD4 BX", "CD8 BX"))
+ df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
+ write.xlsx(df_uc, paste0(out.path, "table_tcopies_unique_clones.xlsx"), overwrite=T)
+}
 
 df_uc <- read.xlsx(paste0(out.path, "table_tcopies_unique_clones.xlsx"))
 df_uc$stage <- factor(df_uc$stage, levels=c("PreTX","PostTX","donor-reactive"))
@@ -271,7 +283,7 @@ anova.tcopies %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Analysis of variance (ANOVA) for multiple group comparsion of unqiue clone counts grouped by phenotype", autonum = tbl_autonum)
+  set_caption("Analysis of variance (ANOVA) for multiple group comparsion of unqiue clone counts grouped by phenotype", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 ttest.uc1 <- t.test(df_uc[df_uc$CDtype %in% "CD4" & df_uc$stage %in% "PreTX",]$V5, df_uc[df_uc$CDtype %in% "CD4" &df_uc$stage %in% "PostTX",]$V5, paired=T)
 ttest.uc2 <- t.test(df_uc[df_uc$CDtype %in% "CD4" & df_uc$stage %in% "PreTX",]$V5, df_uc[df_uc$CDtype %in% "CD4" &df_uc$stage %in% "donor-reactive",]$V5, paired=T)
@@ -300,7 +312,7 @@ ttest.uc %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in unique clonotypes in the pre-and donor-reactive repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in unique clonotypes in the pre-and donor-reactive repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 ```
 
@@ -557,7 +569,7 @@ ttest.slope %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in the power law slopes in the pre-and donor-reactive repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in the power law slopes in the pre-and donor-reactive repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
   
 ```
 
@@ -654,25 +666,30 @@ get_VJpairs <- function(x, classes=2){
 }
 
 # Jensen-Shannon Divergence for VJ pairs
-# rel.files <- rbind(cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "late")]),
-#                    cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "low")]),
-#                    cbind(files.tcr[str_detect(files.tcr, "low")], files.tcr[str_detect(files.tcr, "late")]))
-# JSD.val.vj <- apply(rel.files, 1, function(x) get_VJpairs(x))
-# JSD.VJ <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val.vj)))
-# colnames(JSD.VJ)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
-# JSD.VJ$rejection <- ifelse(JSD.VJ$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
-# JSD.VJ[, 11:14]<- apply(JSD.VJ[, 11:14], 2, as.numeric)
-# write.xlsx(JSD.VJ, paste0(out.path, "table_tcopies_JSD_VJ.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_JSD_VJ.xlsx")){
+ rel.files <- rbind(cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "late")]),
+                    cbind(files.tcr[str_detect(files.tcr, "BL")], files.tcr[str_detect(files.tcr, "low")]),
+                    cbind(files.tcr[str_detect(files.tcr, "low")], files.tcr[str_detect(files.tcr, "late")]))
+ JSD.val.vj <- apply(rel.files, 1, function(x) get_VJpairs(x))
+ JSD.VJ <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val.vj)))
+ colnames(JSD.VJ)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
+ JSD.VJ$rejection <- ifelse(JSD.VJ$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
+ JSD.VJ[, 11:14]<- apply(JSD.VJ[, 11:14], 2, as.numeric)
+ write.xlsx(JSD.VJ, paste0(out.path, "table_tcopies_JSD_VJ.xlsx"), overwrite=T)
+}
+
 JSD.VJ <- read.xlsx(paste0(out.path, "table_tcopies_JSD_VJ.xlsx"))
 
 
 # # Jensen-Shannon Divergence for clonal distribution
-# JSD.val <- apply(rel.files, 1, wrapper_JSD)
-# JSD.df <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val)))
-# colnames(JSD.df)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
-# JSD.df$rejection <- ifelse(JSD.df$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
-# JSD.df[, 11:14]<- apply(JSD.df[, 11:14], 2, as.numeric)
-# write.xlsx(JSD.df, paste0(out.path, "table_tcopies_JSD.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_JSD.xlsx")){
+ JSD.val <- apply(rel.files, 1, wrapper_JSD)
+ JSD.df <- data.frame(cbind(t(sapply(rel.files[,1], extract_nameinfo)), t(sapply(rel.files[,2], extract_nameinfo)), t(JSD.val)))
+ colnames(JSD.df)[11:14] <- c("JSD.all", "JSD.1000", "JSD.500", "JSD.100")
+ JSD.df$rejection <- ifelse(JSD.df$patID %in% tcopies.TCMGRset, "Rejectors",  "Controls")
+ JSD.df[, 11:14]<- apply(JSD.df[, 11:14], 2, as.numeric)
+ write.xlsx(JSD.df, paste0(out.path, "table_tcopies_JSD.xlsx"), overwrite=T)
+}
 
 JSD.df <- read.xlsx(paste0(out.path, "table_tcopies_JSD.xlsx"))
 
@@ -681,7 +698,7 @@ JSD.df <- read.xlsx(paste0(out.path, "table_tcopies_JSD.xlsx"))
 #   autofit %>%
 #   colformat_num(digits=2) %>%
 #   bold(part = "header") %>%
-#   set_caption("JSD)", autonum = tbl_autonum)
+#   set_caption("JSD)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 JSD.CD4 <- JSD.df[JSD.df$CDtype %in% "CD4" & JSD.df$stage %in% "BL1" & JSD.df$stage.1 %in% "late1",]
@@ -767,7 +784,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and PostTX in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and PostTX in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -824,7 +841,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and allo in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PreTX and allo in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -881,7 +898,7 @@ ttest.full %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PostTX and allo in rejectors and controls", autonum = tbl_autonum)
+  set_caption("Results of unpaired Student's t testing to assess differences in overall JSD between PostTX and allo in rejectors and controls", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
@@ -1021,27 +1038,28 @@ df.dwns <- data.frame(cbind(unique(tcopies.reads[,c("CDtype","stage")]), smalles
  df.dwns %>%
    flextable()  %>%
      bold(part = "header") %>%
-   set_caption("Smallest read size for each phenotype group and time point", autonum = tbl_autonum) %>%
+   set_caption("Smallest read size for each phenotype group and time point", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) %>%
    autofit() %>%
    fit_to_width(6.5)
 
-# --------
-# rel.files <- files.tcr[str_detect(files.tcr,"low", negate = T)]
-# plan(multisession, workers=5)
-# res.dwns <- data.frame(t(future_sapply(rel.files, function(x) wrapper_downsampling(x, path=data.path, df.dwns, rep.dwns = rep.dwns, incl.stages = c("BL1","late1")))))
-# plan(sequential)
-# colnames(res.dwns) <- c("patID","CDtype","stage","rejection",
-#                         "org.abs.allo",  "org.abs.allo.clones", "org.rel.allo", "org.rel.allo.clones", "org.cum.allo",
-#                        "abs.allo", "abs.allo.lo", "abs.allo.up",
-#                        "abs.allo.clones", "abs.allo.clones.lo", "abs.allo.clones.up",
-#                        "rel.allo", "rel.allo.lo", "rel.allo.up",
-#                        "rel.allo.clones", "rel.allo.clones.lo", "rel.allo.clones.up",
-#                        "cum.allo","cum.allo.lo", "cum.allo.up")
-# 
-# res.dwns[,5:24] <- apply(res.dwns[,5:24],2, as.numeric)
-# res.dwns[res.dwns$rejection==0,]$rejection <- "Controls"
-# res.dwns[res.dwns$rejection==1,]$rejection <- "Rejectors"
-# write.xlsx(res.dwns, paste0(out.path, "table_tcopies_allo_dwns.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_allo_dwns.xlsx")){
+ rel.files <- files.tcr[str_detect(files.tcr,"low", negate = T)]
+ plan(multisession, workers=5)
+ res.dwns <- data.frame(t(future_sapply(rel.files, function(x) wrapper_downsampling(x, path=data.path, df.dwns, rep.dwns = rep.dwns, incl.stages = c("BL1","late1")))))
+ plan(sequential)
+ colnames(res.dwns) <- c("patID","CDtype","stage","rejection",
+                         "org.abs.allo",  "org.abs.allo.clones", "org.rel.allo", "org.rel.allo.clones", "org.cum.allo",
+                        "abs.allo", "abs.allo.lo", "abs.allo.up",
+                        "abs.allo.clones", "abs.allo.clones.lo", "abs.allo.clones.up",
+                        "rel.allo", "rel.allo.lo", "rel.allo.up",
+                        "rel.allo.clones", "rel.allo.clones.lo", "rel.allo.clones.up",
+                        "cum.allo","cum.allo.lo", "cum.allo.up")
+ 
+ res.dwns[,5:24] <- apply(res.dwns[,5:24],2, as.numeric)
+ res.dwns[res.dwns$rejection==0,]$rejection <- "Controls"
+ res.dwns[res.dwns$rejection==1,]$rejection <- "Rejectors"
+ write.xlsx(res.dwns, paste0(out.path, "table_tcopies_allo_dwns.xlsx"), overwrite=T)
+}
 
 res.dwns <- read.xlsx(paste0(out.path, "table_tcopies_allo_dwns.xlsx"))
 
@@ -1211,7 +1229,7 @@ res.data.clts %>%
                      colwidths = c(2,7,7)) %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of alloclonotype fraction and absolute alloclonotype counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = tbl_autonum)
+  set_caption("Overview of alloclonotype fraction and absolute alloclonotype counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 res.ttpaired.clts <- data.frame("Phenotype"=c(rep("CD4",2),rep("CD8",2)), 
@@ -1230,7 +1248,7 @@ res.ttpaired.clts %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in absolute alloconotype counts and alloclonotype fraction in the pre-and post-transplant repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in absolute alloconotype counts and alloclonotype fraction in the pre-and post-transplant repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 
 
@@ -1249,7 +1267,7 @@ res.data.cs %>%
                      colwidths = c(2,7,7)) %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of alloclonal fraction and absolute alloclone counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = tbl_autonum)
+  set_caption("Overview of alloclonal fraction and absolute alloclone counts in the pre-transplant and post-transplant repertoires after downsampling", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 res.ttpaired.cs <- data.frame("Phenotype"=c(rep("CD4",2),rep("CD8",2)), 
@@ -1268,7 +1286,7 @@ res.ttpaired.cs %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the paired t test assessing differences in absolute allocone counts and alloclonal fraction in the pre-and post-transplant repertoire", autonum = tbl_autonum) 
+  set_caption("Results of the paired t test assessing differences in absolute allocone counts and alloclonal fraction in the pre-and post-transplant repertoire", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 ```
 
@@ -1297,7 +1315,7 @@ res.tmp %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the unpaired Student's t test assessing differences in alloclonotype fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = tbl_autonum) 
+  set_caption("Results of the unpaired Student's t test assessing differences in alloclonotype fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = run_autonum(seq_id = "tab", bkm = newBKM())) 
 
 
 # Hypothesis testing of alloclonal fraction between the two outcome groups in PostTX
@@ -1322,7 +1340,7 @@ res.tmp %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the unpaired Student's t test assessing differences in alloclone fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = tbl_autonum)
+  set_caption("Results of the unpaired Student's t test assessing differences in alloclone fraction between rejectors (N=6) and non-rejectors (N=6)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 
 
@@ -1400,12 +1418,14 @@ calc_RepertoireStatistics <- function(filename=NULL, data=NULL, path=data.path){
 
 
 #Generate table of repertoire characteristics for all rep samples
-# tcopies.stats <- data.frame(t(sapply(files.tcr, calc_RepertoireStatistics, USE.NAMES = F)))
-# varsToNumeric <- colnames(tcopies.stats)[5:ncol(tcopies.stats)]
-# tcopies.stats[,varsToNumeric] <- lapply(tcopies.stats[,varsToNumeric], function(x) as.numeric(as.character(x)))
-# tcopies.stats[tcopies.stats$rejection==0,]$rejection <- "Controls"
-# tcopies.stats[tcopies.stats$rejection==1,]$rejection <- "Rejectors"
-# write.xlsx(tcopies.stats, paste0(out.path, "table_tcopies_diversity.xlsx"), overwrite=T)
+if(!file.exists("table_tcopies_diversity.xlsx")){
+  tcopies.stats <- data.frame(t(sapply(files.tcr, calc_RepertoireStatistics, USE.NAMES = F)))
+  varsToNumeric <- colnames(tcopies.stats)[5:ncol(tcopies.stats)]
+  tcopies.stats[,varsToNumeric] <- lapply(tcopies.stats[,varsToNumeric], function(x) as.numeric(as.character(x)))
+  tcopies.stats[tcopies.stats$rejection==0,]$rejection <- "Controls"
+  tcopies.stats[tcopies.stats$rejection==1,]$rejection <- "Rejectors"
+  write.xlsx(tcopies.stats, paste0(out.path, "table_tcopies_diversity.xlsx"), overwrite=T)
+}
 
 tcopies.stats <- read.xlsx(paste0(out.path, "table_tcopies_diversity.xlsx"))
 
@@ -1613,7 +1633,7 @@ res %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = tbl_autonum)
+  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 #- Range of diversity estimates
 
@@ -1629,7 +1649,7 @@ div.df %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Distribution of the diversity estimates across the immune repertoires", autonum = tbl_autonum)
+  set_caption("Distribution of the diversity estimates across the immune repertoires", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 ```
@@ -1691,7 +1711,7 @@ res %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = tbl_autonum)
+  set_caption("Results of the two-sample t tests for the diversity estimates between rejectors and controls for CD4 and CD8", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 
 ```
@@ -1979,6 +1999,7 @@ df.43.CD8 <- rbind(df.43.CD8.BL,df.43.CD8.low,df.43.CD8.late[,!(colnames(df.43.C
 # 
 # write.xlsx(res.all, paste0(out.path, "table_tcopies_dwns_PrePostTissue_readjust.xlsx"), overwrite=T)
 
+if(F){ #deactivate for now depends on file >>table_tcopies_dwns_PrePostTissue_readjust.xlsx<< which currently can not be generated as variable res.tmp.tissue is missing
 res.all <- read.xlsx(paste0(out.path, "table_tcopies_dwns_PrePostTissue_readjust.xlsx"))
 res.all[res.all$rejection==0,]$rejection <- "Controls"
 res.all[res.all$rejection==1,]$rejection <- "Rejectors"
@@ -2014,7 +2035,7 @@ p <- ggplot(data=tmp, aes(y=rel.allo, x=patID, fill=stage))+
 filename <- paste0("plot_allofrac_blood+tissue_barchart_2x2_tcopies")
 p
 ggsave(filename = paste(out.path,filename,".png", sep = ""), plot=p, width = 20, height = 20, dpi = 640, units="cm", limitsize = F)
-
+}
 ```
 
 
@@ -2045,7 +2066,7 @@ cdratio.tissue %>%
   flextable() %>%
   autofit %>%
   bold(part = "header") %>%
-  set_caption("CD4:CD8 ratio of clones in the allograft", autonum = tbl_autonum)
+  set_caption("CD4:CD8 ratio of clones in the allograft", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 cdratio.tissue.counts <- data.frame(cbind(c("R34", "R43"),rbind(c(sum(tissue_34$count), sum(tissue_34[tissue_34$pheno %in% "CD4",]$count), sum(tissue_34[tissue_34$pheno %in% "CD8",]$count), sum(tissue_34[tissue_34$pheno %in% "Unknown",]$count)), c(sum(tissue_43$count), sum(tissue_43[tissue_43$pheno %in% "CD4",]$count), sum(tissue_43[tissue_43$pheno %in% "CD8",]$count), sum(tissue_43[tissue_43$pheno %in% "Unknown",]$count)))))
 colnames(cdratio.tissue.counts) <- c("Patient","Total", "CD4", "CD8", "Unknown")
@@ -2062,7 +2083,7 @@ cdratio.tissue.counts %>%
   flextable() %>%
   autofit %>%
   bold(part = "header") %>%
-  set_caption("CD4:CD8 ratio of clone counts in the allograft", autonum = tbl_autonum)
+  set_caption("CD4:CD8 ratio of clone counts in the allograft", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 ```
 ## Diversity estimates
 
@@ -2115,7 +2136,7 @@ get_stats <- function(df, blood){
 
 
 # Overlap Table
-res_tissue_34 <- t(sapply(stages, function(x) calc_CloneOverlap(file="R34", blood=blood_34, tissue = tissue_34, stage = x)))
+res_tissue_34 <- bind_rows(lapply(stages, function(x) calc_CloneOverlap(file="R34", blood=blood_34, tissue = tissue_34, stage = x)))
 blood_43 <- merged[["R43"]]
 
 
@@ -2127,10 +2148,10 @@ df.tissue %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of the allograft immune repertoire of patient R34 and R43 at time of biopsy", autonum = tbl_autonum)
+  set_caption("Overview of the allograft immune repertoire of patient R34 and R43 at time of biopsy", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 # Overlap Table
-res_tissue_43 <- t(sapply(stages, function(x) calc_CloneOverlap(file="R43", blood=blood_43, tissue = tissue_43, stage = x)))
+res_tissue_43 <- bind_rows(lapply(stages, function(x) calc_CloneOverlap(file="R43", blood=blood_43, tissue = tissue_43, stage = x)))
 res_tissue <- data.frame(rbind(res_tissue_34, res_tissue_43))
 res_tissue %>% 
   `colnames<-`(c("Patient", "Sample", "Clones - blood", "Clones - tissue", "New Clones - tissue", "New Clones - tissue (%)", 
@@ -2138,7 +2159,7 @@ res_tissue %>%
   flextable()  %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Overview of the immune repertoire samples of patient R34 and R43 (pre-transplant, alloreative, post-transplant and allograft)", autonum = tbl_autonum)
+  set_caption("Overview of the immune repertoire samples of patient R34 and R43 (pre-transplant, alloreative, post-transplant and allograft)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 # Diversity estimates of the tissue samples
@@ -2156,7 +2177,7 @@ div.tissue %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Diversity estimates of the tissue samples R34 and R43", autonum = tbl_autonum)
+  set_caption("Diversity estimates of the tissue samples R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 
 ```
@@ -2331,7 +2352,7 @@ tbl.tmp %>%
   flextable() %>%
   bold(part = "header") %>%
   autofit()  %>% fit_to_width(7)  %>% set_table_properties(layout = "autofit") %>%
-  set_caption("Comparison in V usage and VJ usage between the readjusted PostTX and allograft repertoires of patient R34 and R43", autonum = tbl_autonum)
+  set_caption("Comparison in V usage and VJ usage between the readjusted PostTX and allograft repertoires of patient R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
   
 
 ```
@@ -2367,7 +2388,7 @@ JSD.tissue %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD)", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD)", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 write.xlsx(JSD.tissue, paste0(out.path, "table_tcopies_JSD_tissue.xlsx"), overwrite=T)
   
@@ -2381,7 +2402,7 @@ JSD.tissue.hf %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD) considering only the high frequency component of the pre-transplant (PreTX) and post-transplant (PostTX) samples", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD) considering only the high frequency component of the pre-transplant (PreTX) and post-transplant (PostTX) samples", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
@@ -2472,7 +2493,7 @@ JSD.overlap %>%
   autofit %>%
   colformat_num(digits=2) %>%
   bold(part = "header") %>%
-  set_caption("Jensen-Shannon Divergence (JSD) of the overlap between the periphery and the allorgraft sample for patient R34 and R43", autonum = tbl_autonum)
+  set_caption("Jensen-Shannon Divergence (JSD) of the overlap between the periphery and the allorgraft sample for patient R34 and R43", autonum = run_autonum(seq_id = "tab", bkm = newBKM()))
 
 ```
 
@@ -2549,6 +2570,12 @@ top20ranking <- list("R34-periph"=get_ranking(df.34.late, tissue_34, pat="R34", 
 
 write.xlsx(top20ranking, file=paste0(out.path,"table_tcopies_top20ranking_periph_tissue.xlsx"), overwrite=T)
 
+```
+
+```{r echo=FALSE, cache=T,  message=FALSE, warning=FALSE}
+if(CONVENTIONAL_ONLY){
+  knitr::knit_exit()
+}
 ```
 
 
